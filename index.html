@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reconstrua Seu Muro</title>
+
+<style>
+body{
+    margin:0;
+    font-family: 'Segoe UI', sans-serif;
+    background-image: url('https://cms-imgp.jw-cdn.org/img/p/1102016077/univ/art/1102016077_univ_lsr_lg.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    color:white;
+    text-align:center;
+}
+
+body::before{
+    content:"";
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.6);
+    z-index:-1;
+}
+
+/* Tela inicial */
+#startScreen{
+    position:fixed;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.85);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+}
+
+#startScreen input{
+    padding:10px;
+    border-radius:8px;
+    border:none;
+    margin:10px 0;
+    width:200px;
+}
+
+#startScreen button{
+    padding:10px 20px;
+    border:none;
+    border-radius:8px;
+    background:#27ae60;
+    color:white;
+    cursor:pointer;
+}
+
+/* Título acima do muro */
+#gameTitle{
+    display:none;
+    margin-top:20px;
+    font-size:28px;
+    font-weight:bold;
+    text-shadow: 2px 2px 8px black;
+}
+
+/* Muro */
+#wall{
+    width:95%;
+    max-width:600px;
+    margin:15px auto 40px auto;
+    display:grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap:2px;
+    background:#dcdcdc;
+    padding:5px;
+    border-radius:8px;
+    display:none;
+}
+
+.block{
+    aspect-ratio:1/1;
+    background:#444;
+    cursor:pointer;
+    transition:0.3s ease;
+}
+
+.block:hover{
+    transform:scale(1.05);
+}
+
+.block.built{
+    background-image:url('https://m.media-amazon.com/images/I/71hLB7x6KuL._AC_UF894,1000_QL80_.jpg');
+    background-size:cover;
+    background-position:center;
+    animation:build 0.4s ease forwards;
+}
+
+@keyframes build{
+    0%{transform:scale(0.2);opacity:0;}
+    100%{transform:scale(1);opacity:1;}
+}
+
+/* Modal */
+#modal{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.8);
+    display:none;
+    justify-content:center;
+    align-items:center;
+}
+
+#modal-content{
+    background:white;
+    color:black;
+    padding:20px;
+    border-radius:10px;
+    width:90%;
+    max-width:400px;
+}
+
+#modal-content button{
+    display:block;
+    width:100%;
+    margin:8px 0;
+    padding:10px;
+    border:none;
+    border-radius:8px;
+    background:#e67e22;
+    color:white;
+    cursor:pointer;
+}
+
+/* Popup final */
+#finalPopup{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.9);
+    display:none;
+    justify-content:center;
+    align-items:center;
+}
+
+.popupContent{
+    background:white;
+    color:black;
+    padding:30px;
+    border-radius:15px;
+    text-align:center;
+    animation:pop 0.5s ease;
+}
+
+@keyframes pop{
+    0%{transform:scale(0.5);opacity:0;}
+    100%{transform:scale(1);opacity:1;}
+}
+
+.fadeVerse{
+    margin-top:15px;
+    opacity:0;
+    animation:fadeIn 2s forwards;
+}
+
+@keyframes fadeIn{
+    to{opacity:1;}
+}
+</style>
+</head>
+
+<body>
+
+<div id="startScreen">
+    <h1>🧱 Reconstrua Seu Muro</h1>
+    <p>Digite seu nome para começar</p>
+    <input type="text" id="playerName" placeholder="Seu nome">
+    <button onclick="startGame()">Começar Reconstrução</button>
+</div>
+
+<h1 id="gameTitle">🧱 Reconstrua Seu Muro</h1>
+
+<div id="wall"></div>
+
+<div id="modal">
+  <div id="modal-content">
+      <div id="question"></div>
+      <div id="options"></div>
+  </div>
+</div>
+
+<div id="finalPopup">
+  <div class="popupContent">
+      <h2 id="congratsText"></h2>
+      <p class="fadeVerse">“Ao seu lado trabalharam...” — Neemias 3</p>
+      <button onclick="restartGame()">Jogar Novamente</button>
+  </div>
+</div>
+
+<audio id="buildSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_3b0a9c0c1f.mp3?filename=hammer-hit-1-95638.mp3"></audio>
+
+<script>
+
+const questions = [
+{question:"Quem reconstruiu a Porta das Ovelhas?",options:["Neemias","Eliasibe","Esdras","Sambalate"],answer:1},
+{question:"O que os nobres de Tecoa não fizeram?",options:["Não ofertaram","Não se submeteram ao trabalho","Não oraram","Não lutaram"],answer:1},
+{question:"Quem também trabalhou?",options:["Só soldados","Comerciantes e ourives","Só levitas","Só profetas"],answer:1},
+{question:"Muitos reconstruíram diante de onde?",options:["Templo","Suas casas","Palácio","Mercado"],answer:1},
+{question:"O trabalho foi:",options:["Centralizado","Desorganizado","Distribuído","Estrangeiros"],answer:2},
+{question:"Quem reconstruiu mais de uma parte?",options:["Todos","Homens de Tecoa","Nenhum","Neemias"],answer:1},
+{question:"O capítulo enfatiza:",options:["Milagre","Guerra","Organização","Profecia"],answer:2},
+{question:"Expressão mais repetida no capítulo:",options:["E lutaram","Ao seu lado","Sozinho","Em segredo"],answer:1},
+{question:"O muro foi feito por:",options:["Elite","Pessoas comuns","Só líderes","Reis"],answer:1},
+{question:"Lição principal:",options:["Isolado","Esperar","Trabalhar em unidade","Muros físicos"],answer:2}
+];
+
+let builtCount = 0;
+let currentBlock = null;
+let player = "";
+
+const wall = document.getElementById("wall");
+const modal = document.getElementById("modal");
+const questionEl = document.getElementById("question");
+const optionsEl = document.getElementById("options");
+const buildSound = document.getElementById("buildSound");
+
+function startGame(){
+    player = document.getElementById("playerName").value;
+    if(player.trim() === ""){
+        alert("Digite seu nome!");
+        return;
+    }
+    document.getElementById("startScreen").style.display="none";
+    document.getElementById("gameTitle").style.display="block";
+    wall.style.display="grid";
+}
+
+questions.forEach((q,index)=>{
+    const block = document.createElement("div");
+    block.classList.add("block");
+    block.onclick = ()=> openQuestion(index,block);
+    wall.appendChild(block);
+});
+
+function openQuestion(index,block){
+    if(block.classList.contains("built")) return;
+
+    currentBlock = block;
+    questionEl.innerHTML = "<h3>"+questions[index].question+"</h3>";
+    optionsEl.innerHTML="";
+
+    questions[index].options.forEach((option,i)=>{
+        const btn=document.createElement("button");
+        btn.textContent=option;
+        btn.onclick=()=>checkAnswer(index,i);
+        optionsEl.appendChild(btn);
+    });
+
+    modal.style.display="flex";
+}
+
+function checkAnswer(qIndex,selected){
+    if(selected===questions[qIndex].answer){
+        currentBlock.classList.add("built");
+        buildSound.currentTime=0;
+        buildSound.play();
+        builtCount++;
+
+        if(builtCount===questions.length){
+            document.getElementById("congratsText").innerText =
+            "🎉 Parabéns, "+player+"! Você reconstruiu o muro!";
+            document.getElementById("finalPopup").style.display="flex";
+        }
+    }else{
+        alert("Resposta incorreta! Tente outro bloco.");
+    }
+
+    modal.style.display="none";
+}
+
+function restartGame(){
+    location.reload();
+}
+
+</script>
+
+</body>
+</html>
