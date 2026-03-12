@@ -267,6 +267,11 @@ function openQuestion(index,block){
 }
 
 function checkAnswer(qIndex,selected){
+    confetti({
+    particleCount: 150,
+    spread: 90,
+    origin: { y: 0.6 }
+    });
     if(selected===questions[qIndex].answer){
         currentBlock.classList.add("built");
         buildSound.currentTime=0;
@@ -290,7 +295,6 @@ function restartGame(){
 }
 
 </script>
-
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </body>
-
 </html>
